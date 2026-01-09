@@ -1,4 +1,5 @@
 pub mod responses;
 pub mod subsonic {
     pub mod system;
+    pub mod users;
 }

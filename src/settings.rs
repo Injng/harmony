@@ -19,7 +19,7 @@ pub struct ServerConfig {
 #[derive(Debug, Deserialize)]
 pub struct DatabaseConfig {
     pub file: String,
-}n
+}
 
 impl Settings {
     pub fn load(path: &str) -> Self {

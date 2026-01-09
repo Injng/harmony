@@ -1,13 +1,23 @@
 mod api;
+mod auth;
 mod db;
 mod settings;
 
 use std::sync::Arc;
 
-use api::subsonic::system::{get_license, ping};
+use api::subsonic::{
+    system::{api_get_license, api_ping},
+    users::api_create_user,
+};
 use axum::{Router, routing::get};
-use sea_orm::Database;
+use sea_orm::{Database, DatabaseConnection};
 use settings::Settings;
+
+#[derive(Clone)]
+struct AppState {
+    settings: Arc<Settings>,
+    db: Arc<DatabaseConnection>,
+}
 
 #[tokio::main]
 async fn main() {
@@ -19,15 +29,23 @@ async fn main() {
         "[FATAL] Failed to connect to database at {}",
         &db_address
     )));
+    db.get_schema_registry("harmony::db::*")
+        .sync(db.as_ref())
+        .await
+        .expect("[FATAL] Failed to get schema registry");
+
+    // create shared application state
+    let state = AppState { settings, db };
 
     // set up API routing and serve
     let router = Router::new()
-        .route("/rest/ping", get(ping))
-        .route("/rest/ping.view", get(ping))
-        .route("/rest/getLicense", get(get_license))
-        .route("/rest/getLicense.view", get(get_license))
-        .with_state(settings)
-        .with_state(db);
+        .route("/rest/ping", get(api_ping))
+        .route("/rest/ping.view", get(api_ping))
+        .route("/rest/getLicense", get(api_get_license))
+        .route("/rest/getLicense.view", get(api_get_license))
+        .route("/rest/createUser", get(api_create_user))
+        .route("/rest/createUser.view", get(api_create_user))
+        .with_state(state);
     let listener = tokio::net::TcpListener::bind(&host_address)
         .await
         .expect(&format!(
