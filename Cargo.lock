@@ -853,6 +853,7 @@ dependencies = [
  "base64",
  "chrono",
  "config",
+ "hex",
  "sea-orm",
  "serde",
  "serde_json",

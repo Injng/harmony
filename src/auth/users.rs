@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
 use sea_orm::Set;
 use sea_orm::entity::prelude::*;
@@ -9,15 +9,27 @@ use crate::db::user::Entity as User;
 
 use super::auth::auth_encrypt;
 
-pub async fn auth_create_user(
+pub async fn auth_create_user<'a>(
     username: &str,
     password: &str,
     email: &str,
     key: &str,
     db: &DatabaseConnection,
 ) -> Result<()> {
+    // handle hex-encoded strings
+    let mut dec_password: String = password.to_owned();
+    if &password[0..4] == "enc:" {
+        if let Ok(v) = hex::decode(&password[4..]) {
+            if let Ok(p) = String::from_utf8(v) {
+                dec_password = p;
+            } else {
+                return Err(anyhow!("[ERROR] Invalid hex-encoded password"));
+            }
+        }
+    }
+
     // encrypt password based on provided key
-    let (enc_password, nonce_str) = auth_encrypt(password, key)?;
+    let (enc_password, nonce_str) = auth_encrypt(&dec_password, key)?;
 
     // if no other users in database, the first user is admin
     let mut is_admin = false;
