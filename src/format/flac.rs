@@ -96,34 +96,34 @@ struct FlacMetadataHeader {
 
 #[derive(Debug, Clone)]
 pub struct FlacStreamInfo {
-    min_block_size: u16,
-    max_block_size: u16,
-    min_frame_size: u32,
-    max_frame_size: u32,
-    sample_rate: u32,
-    channels: u8,
-    bps: u8,
-    total_samples: u64,
-    checksum: [u8; 16],
+    pub min_block_size: u16,
+    pub max_block_size: u16,
+    pub min_frame_size: u32,
+    pub max_frame_size: u32,
+    pub sample_rate: u32,
+    pub channels: u8,
+    pub bps: u8,
+    pub total_samples: u64,
+    pub checksum: [u8; 16],
 }
 
 #[derive(Debug, Clone)]
 pub struct FlacPicture {
-    picture_type: FlacPictureType,
-    media_type: String,
-    description: String,
-    width: u32,
-    height: u32,
-    color_depth: u32,
-    colors: u32,
-    data: Vec<u8>,
+    pub picture_type: FlacPictureType,
+    pub media_type: String,
+    pub description: String,
+    pub width: u32,
+    pub height: u32,
+    pub color_depth: u32,
+    pub colors: u32,
+    pub data: Vec<u8>,
 }
 
 #[derive(Debug, Clone)]
 pub struct FlacMetadata {
-    stream_info: FlacStreamInfo,
-    tags: HashMap<String, Vec<String>>,
-    pictures: Vec<FlacPicture>,
+    pub stream_info: FlacStreamInfo,
+    pub tags: HashMap<String, Vec<String>>,
+    pub pictures: Vec<FlacPicture>,
 }
 
 fn parse_flac_marker(input: &[u8]) -> IResult<&[u8], &[u8]> {
