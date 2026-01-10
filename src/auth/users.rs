@@ -7,9 +7,34 @@ use uuid::Uuid;
 use crate::db::user;
 use crate::db::user::Entity as User;
 
-use super::auth::auth_encrypt;
+use super::auth::{auth_check_and_decode_hex, auth_encrypt, auth_verify};
 
-pub async fn auth_create_user<'a>(
+pub async fn auth_check_user(
+    username: &str,
+    token: &str,
+    salt: &str,
+    key: &str,
+    db: &DatabaseConnection,
+) -> Result<()> {
+    // check if user with username exists
+    let user: Option<user::Model> = User::find()
+        .filter(user::Column::Username.eq(username))
+        .one(db)
+        .await?;
+
+    // attempt to verify the password
+    if let Some(u) = user {
+        if auth_verify(&u.password, token, salt, key, &u.nonce) {
+            return Ok(());
+        } else {
+            return Err(anyhow!("[ERROR] Incorrect password for user"));
+        }
+    } else {
+        return Err(anyhow!("[ERROR] User does not exist in database"));
+    }
+}
+
+pub async fn auth_create_user(
     username: &str,
     password: &str,
     email: &str,
@@ -18,15 +43,7 @@ pub async fn auth_create_user<'a>(
 ) -> Result<()> {
     // handle hex-encoded strings
     let mut dec_password: String = password.to_owned();
-    if &password[0..4] == "enc:" {
-        if let Ok(v) = hex::decode(&password[4..]) {
-            if let Ok(p) = String::from_utf8(v) {
-                dec_password = p;
-            } else {
-                return Err(anyhow!("[ERROR] Invalid hex-encoded password"));
-            }
-        }
-    }
+    dec_password = auth_check_and_decode_hex(&dec_password)?;
 
     // encrypt password based on provided key
     let (enc_password, nonce_str) = auth_encrypt(&dec_password, key)?;

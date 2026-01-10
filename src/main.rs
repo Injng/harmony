@@ -9,7 +9,8 @@ use api::subsonic::{
     system::{api_get_license, api_ping},
     users::api_create_user,
 };
-use axum::{Router, routing::get};
+use auth::middleware::auth_middleware;
+use axum::{Router, middleware, routing::get};
 use sea_orm::{Database, DatabaseConnection};
 use settings::Settings;
 
@@ -45,6 +46,10 @@ async fn main() {
         .route("/rest/getLicense.view", get(api_get_license))
         .route("/rest/createUser", get(api_create_user))
         .route("/rest/createUser.view", get(api_create_user))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ))
         .with_state(state);
     let listener = tokio::net::TcpListener::bind(&host_address)
         .await
