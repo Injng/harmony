@@ -44,12 +44,12 @@ async fn main() {
         .route("/rest/ping.view", get(api_ping))
         .route("/rest/getLicense", get(api_get_license))
         .route("/rest/getLicense.view", get(api_get_license))
-        .route("/rest/createUser", get(api_create_user))
-        .route("/rest/createUser.view", get(api_create_user))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,
         ))
+        .route("/rest/createUser", get(api_create_user))
+        .route("/rest/createUser.view", get(api_create_user))
         .with_state(state);
     let listener = tokio::net::TcpListener::bind(&host_address)
         .await
