@@ -7,6 +7,7 @@ use serde::Deserialize;
 pub struct Settings {
     pub server: ServerConfig,
     pub database: DatabaseConfig,
+    pub library: LibraryConfig,
     pub key: String,
 }
 
@@ -19,6 +20,11 @@ pub struct ServerConfig {
 #[derive(Debug, Deserialize)]
 pub struct DatabaseConfig {
     pub file: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LibraryConfig {
+    pub path: String,
 }
 
 impl Settings {

@@ -2,6 +2,7 @@ mod api;
 mod auth;
 mod db;
 mod format;
+mod library;
 mod settings;
 
 use std::sync::Arc;
@@ -12,6 +13,7 @@ use api::subsonic::{
 };
 use auth::middleware::auth_middleware;
 use axum::{Router, middleware, routing::get};
+use library::scanner::scan;
 use sea_orm::{Database, DatabaseConnection};
 use settings::Settings;
 
@@ -35,6 +37,8 @@ async fn main() {
         .sync(db.as_ref())
         .await
         .expect("[FATAL] Failed to get schema registry");
+
+    let _ = scan(&settings.library.path, &db).await.unwrap();
 
     // create shared application state
     let state = AppState { settings, db };

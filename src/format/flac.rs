@@ -7,6 +7,8 @@ use nom::{
     number::complete::{be_u8, be_u16, be_u24, be_u32, be_u64, le_u32},
 };
 
+use crate::library::track::Track;
+
 #[derive(Debug, Clone)]
 pub enum FlacBlockType {
     StreamInfo,
@@ -124,6 +126,52 @@ pub struct FlacMetadata {
     pub stream_info: FlacStreamInfo,
     pub tags: HashMap<String, Vec<String>>,
     pub pictures: Vec<FlacPicture>,
+}
+
+impl Track for FlacMetadata {
+    fn get_album_name(&self) -> Result<String> {
+        if let Some(v) = self.tags.get("ALBUM") {
+            return Ok(v[0].clone());
+        } else {
+            return Err(anyhow!("[ERROR] Track must contain ALBUM data"));
+        }
+    }
+
+    fn get_track_name(&self) -> Result<String> {
+        if let Some(v) = self.tags.get("TITLE") {
+            return Ok(v[0].clone());
+        } else {
+            return Err(anyhow!("[ERROR] Track must contain TITLE data"));
+        }
+    }
+
+    fn get_artists(&self) -> Result<Vec<String>> {
+        if let Some(v) = self.tags.get("ARTISTS") {
+            return Ok(v.clone());
+        } else {
+            if let Some(v) = self.tags.get("ARTIST") {
+                return Ok(v.clone());
+            } else {
+                return Err(anyhow!("[ERROR] Track must contain ARTIST(S) data"));
+            }
+        }
+    }
+
+    fn get_album_artists(&self) -> Option<Vec<String>> {
+        if let Some(v) = self.tags.get("ALBUMARTIST") {
+            return Some(v.clone());
+        } else {
+            return None;
+        }
+    }
+
+    fn get_musicbrainz_album_id(&self) -> Option<String> {
+        if let Some(v) = self.tags.get("MUSICBRAINZ_ALBUMID") {
+            return Some(v[0].clone());
+        } else {
+            return None;
+        }
+    }
 }
 
 fn parse_flac_marker(input: &[u8]) -> IResult<&[u8], &[u8]> {

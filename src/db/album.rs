@@ -7,6 +7,8 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub name: String,
+    #[sea_orm(nullable)]
+    pub musicbrainz_id: Option<String>,
     #[sea_orm(has_many, via = "album_artists")]
     pub artists: HasMany<super::artist::Entity>,
     #[sea_orm(has_many)]
