@@ -46,40 +46,49 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
     }
 
     // check if album exists in database already
-    let album = album_find(
+    let album_id = match album_find(
         &album_name,
         artists,
         album_artists.clone(),
-        musicbrainz_album_id,
+        musicbrainz_album_id.clone(),
         db,
     )
-    .await;
-
-    let track_id = Uuid::new_v4();
-    if let Some(album_id) = album {
-        // insert new track with existing album into the database
-        let mut track = track::ActiveModel::builder()
-            .set_id(track_id)
-            .set_title(track_name)
-            .set_album_id(album_id);
-        for artist in artist_models {
-            track = track.add_artist(artist);
-        }
-        let _ = track.insert(db).await?;
-    } else {
-        // insert new album into the database
-        let album_id = Uuid::new_v4();
-        let mut album = album::ActiveModel::builder()
-            .set_id(album_id)
-            .set_name(album_name);
-        if let Some(aa) = album_artists {
-            for artist in &aa {
-                album = album.add_artist(artist_insert(artist, db).await);
+    .await
+    {
+        Some(id) => id,
+        None => {
+            // insert new album into the database
+            let album_id = Uuid::new_v4();
+            let mut album = album::ActiveModel::builder()
+                .set_id(album_id)
+                .set_name(album_name)
+                .set_musicbrainz_id(musicbrainz_album_id);
+            if let Some(aa) = album_artists {
+                for artist in &aa {
+                    album = album.add_artist(artist_insert(artist, db).await);
+                }
             }
+            let _ = album.insert(db).await?;
+            album_id
         }
-        let _ = album.insert(db).await?;
+    };
 
-        // insert new track into the database
+    // check if file has an existing track (update case) or needs new track (insert case)
+    let existing_track_id = file.as_ref().and_then(|f| f.track_id);
+    let track_id = if let Some(track_id) = existing_track_id {
+        // update existing track
+        let mut track = track::ActiveModel::builder()
+            .set_id(track_id)
+            .set_title(track_name)
+            .set_album_id(album_id);
+        for artist in artist_models {
+            track = track.add_artist(artist);
+        }
+        let _ = track.save(db).await?;
+        track_id
+    } else {
+        // insert new track
+        let track_id = Uuid::new_v4();
         let mut track = track::ActiveModel::builder()
             .set_id(track_id)
             .set_title(track_name)
@@ -88,9 +97,10 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
             track = track.add_artist(artist);
         }
         let _ = track.insert(db).await?;
-    }
+        track_id
+    };
 
-    // update file in the database
+    // update or create file in the database
     if let Some(f) = file {
         let mut f: file::ActiveModel = f.into();
         f.last_modified = Set(modified);
