@@ -253,7 +253,10 @@ fn parse_vorbis_comments(input: &[u8]) -> IResult<&[u8], HashMap<String, Vec<Str
     let mut comments: HashMap<String, Vec<String>> = HashMap::new();
     for _ in 0..fields {
         let (new_rest, (key, value)) = parse_vorbis_field(rest)?;
-        comments.entry(key).or_insert_with(Vec::new).push(value);
+        comments
+            .entry(key)
+            .or_insert_with(Vec::new)
+            .push(value.trim().to_string());
         rest = new_rest;
     }
     Ok((rest, comments))

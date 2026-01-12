@@ -3,7 +3,7 @@ use std::{ffi::OsStr, fs, path::Path};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
-use sea_orm::{ColumnTrait, DatabaseConnection, Set};
+use sea_orm::{ColumnTrait, DatabaseConnection, ModelTrait, Set};
 use walkdir::WalkDir;
 
 use crate::db::{album, artist, track};
@@ -39,16 +39,10 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
     let album_artists: Option<Vec<String>> = metadata.get_album_artists();
     let musicbrainz_album_id: Option<String> = metadata.get_musicbrainz_album_id();
 
-    // turn list of artists into active models
-    let mut artist_models: Vec<artist::ActiveModel> = Vec::new();
-    for artist in &artists {
-        artist_models.push(artist_insert(artist, db).await);
-    }
-
     // check if album exists in database already
     let album_id = match album_find(
         &album_name,
-        artists,
+        &artists,
         album_artists.clone(),
         musicbrainz_album_id.clone(),
         db,
@@ -61,7 +55,7 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
             let album_id = Uuid::new_v4();
             let mut album = album::ActiveModel::builder()
                 .set_id(album_id)
-                .set_name(album_name)
+                .set_name(album_name.trim())
                 .set_musicbrainz_id(musicbrainz_album_id);
             if let Some(aa) = album_artists {
                 for artist in &aa {
@@ -73,13 +67,19 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
         }
     };
 
+    // turn list of artists into active models
+    let mut artist_models: Vec<artist::ActiveModel> = Vec::new();
+    for artist in &artists {
+        artist_models.push(artist_insert(artist, db).await);
+    }
+
     // check if file has an existing track (update case) or needs new track (insert case)
     let existing_track_id = file.as_ref().and_then(|f| f.track_id);
     let track_id = if let Some(track_id) = existing_track_id {
         // update existing track
         let mut track = track::ActiveModel::builder()
             .set_id(track_id)
-            .set_title(track_name)
+            .set_title(track_name.trim())
             .set_album_id(album_id);
         for artist in artist_models {
             track = track.add_artist(artist);
@@ -91,7 +91,7 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
         let track_id = Uuid::new_v4();
         let mut track = track::ActiveModel::builder()
             .set_id(track_id)
-            .set_title(track_name)
+            .set_title(track_name.trim())
             .set_album_id(album_id);
         for artist in artist_models {
             track = track.add_artist(artist);
@@ -117,7 +117,43 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
     return Ok(());
 }
 
+async fn scan_cleanup(path: &str, db: &DatabaseConnection) -> Result<()> {
+    // find all the files in the library that are in the database
+    let files = File::find()
+        .filter(file::Column::Path.starts_with(path))
+        .all(db)
+        .await?;
+
+    // delete file records if the file no longer exists
+    for f in files {
+        if !Path::new(&f.path).exists() {
+            let track_id = f.track_id;
+            f.delete(db).await?;
+            if let Some(track_id) = track_id {
+                if let Some(t) = track::Entity::find_by_id(track_id).one(db).await? {
+                    t.delete(db).await?;
+                }
+            }
+        }
+    }
+
+    // delete orphaned albums (albums with no tracks)
+    let albums = album::Entity::find().all(db).await?;
+    for a in albums {
+        let track_count = track::Entity::find()
+            .filter(track::Column::AlbumId.eq(a.id))
+            .count(db)
+            .await?;
+        if track_count == 0 {
+            a.delete(db).await?;
+        }
+    }
+
+    Ok(())
+}
+
 pub async fn scan(path: &str, db: &DatabaseConnection) -> Result<()> {
+    scan_cleanup(&path, db).await?;
     for entry in WalkDir::new(path) {
         let entry = entry?;
         let path = entry.path();

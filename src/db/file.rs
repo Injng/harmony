@@ -11,7 +11,7 @@ pub struct Model {
     pub last_modified: DateTime<Utc>,
     #[sea_orm(unique)]
     pub track_id: Option<Uuid>,
-    #[sea_orm(belongs_to, from = "track_id", to = "id")]
+    #[sea_orm(belongs_to, from = "track_id", to = "id", on_delete = "Cascade")]
     pub track: HasOne<super::track::Entity>,
 }
 

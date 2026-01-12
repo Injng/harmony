@@ -40,7 +40,7 @@ pub async fn album_match(
 /// album on the database with the same album_name using the function album_match().
 pub async fn album_find(
     album_name: &str,
-    artists: Vec<String>,
+    artists: &Vec<String>,
     album_artists: Option<Vec<String>>,
     musicbrainz_album_id: Option<String>,
     db: &DatabaseConnection,

@@ -8,9 +8,9 @@ pub struct Model {
     pub album_id: Uuid,
     #[sea_orm(primary_key, auto_increment = false)]
     pub artist_id: Uuid,
-    #[sea_orm(belongs_to, from = "album_id", to = "id")]
+    #[sea_orm(belongs_to, from = "album_id", to = "id", on_delete = "Cascade")]
     pub album: Option<super::album::Entity>,
-    #[sea_orm(belongs_to, from = "artist_id", to = "id")]
+    #[sea_orm(belongs_to, from = "artist_id", to = "id", on_delete = "Cascade")]
     pub artist: Option<super::artist::Entity>,
 }
 
