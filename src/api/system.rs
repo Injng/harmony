@@ -1,10 +1,10 @@
 use axum::Json;
 use serde_json::Value;
 
-use crate::api::responses::SubsonicResponse;
+use crate::api::responses::HarmonyResponse;
 
 pub async fn api_ping() -> Json<Value> {
-    let response = SubsonicResponse {
+    let response = HarmonyResponse {
         status: Ok(()),
         with_license: false,
     };
@@ -12,7 +12,7 @@ pub async fn api_ping() -> Json<Value> {
 }
 
 pub async fn api_get_license() -> Json<Value> {
-    let response = SubsonicResponse {
+    let response = HarmonyResponse {
         status: Ok(()),
         with_license: true,
     };

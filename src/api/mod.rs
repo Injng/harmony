@@ -1,5 +1,4 @@
+pub mod browse;
 pub mod responses;
-pub mod subsonic {
-    pub mod system;
-    pub mod users;
-}
+pub mod system;
+pub mod users;

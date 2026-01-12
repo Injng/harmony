@@ -7,7 +7,7 @@ mod settings;
 
 use std::sync::Arc;
 
-use api::subsonic::{
+use api::{
     system::{api_get_license, api_ping},
     users::api_create_user,
 };

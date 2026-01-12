@@ -1,21 +1,21 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
-const SUBSONIC_VERSION: &str = "1.16.1";
+const HARMONY_VERSION: &str = "0.1.0";
 const SERVER_TYPE: &str = "harmony";
 const SERVER_VERSION: &str = "0.1.0";
 
-pub struct SubsonicResponse {
+pub struct HarmonyResponse {
     pub status: Result<(), String>,
     pub with_license: bool,
 }
 
-impl Serialize for SubsonicResponse {
+impl Serialize for HarmonyResponse {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         // serialize default values
-        let mut state = serializer.serialize_struct("SubsonicResponse", 6)?;
+        let mut state = serializer.serialize_struct("HarmonyResponse", 6)?;
         state.serialize_field(
             "status",
             match &self.status {
@@ -23,10 +23,9 @@ impl Serialize for SubsonicResponse {
                 _ => "failed",
             },
         )?;
-        state.serialize_field("version", SUBSONIC_VERSION)?;
+        state.serialize_field("version", HARMONY_VERSION)?;
         state.serialize_field("type", SERVER_TYPE)?;
         state.serialize_field("serverVersion", SERVER_VERSION)?;
-        state.serialize_field("openSubsonic", &true)?;
 
         // if the status is an error, add an error field to the response and stop
         if let Err(e) = &self.status {
@@ -36,22 +35,22 @@ impl Serialize for SubsonicResponse {
 
         // if with_license is true, add an always valid license
         if self.with_license {
-            state.serialize_field("license", &SubsonicLicense {})?;
+            state.serialize_field("license", &HarmonyLicense {})?;
         }
 
         return state.end();
     }
 }
 
-struct SubsonicLicense {}
+struct HarmonyLicense {}
 
-impl Serialize for SubsonicLicense {
+impl Serialize for HarmonyLicense {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         // return an always valid license
-        let mut state = serializer.serialize_struct("SubsonicLicense", 1)?;
+        let mut state = serializer.serialize_struct("HarmonyLicense", 1)?;
         state.serialize_field("valid", &true)?;
         state.end()
     }

@@ -5,7 +5,7 @@ use axum::{
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::{AppState, api::responses::SubsonicResponse, auth::users::auth_create_user};
+use crate::{AppState, api::responses::HarmonyResponse, auth::users::auth_create_user};
 
 #[derive(Deserialize)]
 pub struct UserParameters {
@@ -27,13 +27,13 @@ pub async fn api_create_user(
     )
     .await
     {
-        let response = SubsonicResponse {
+        let response = HarmonyResponse {
             status: Err(e.to_string()),
             with_license: false,
         };
         return Json(serde_json::to_value(response).unwrap());
     } else {
-        let response = SubsonicResponse {
+        let response = HarmonyResponse {
             status: Ok(()),
             with_license: false,
         };
