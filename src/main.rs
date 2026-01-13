@@ -8,6 +8,7 @@ mod settings;
 use std::sync::Arc;
 
 use api::{
+    browse::api_get_album_list,
     system::{api_get_license, api_ping},
     users::api_create_user,
 };
@@ -46,15 +47,13 @@ async fn main() {
     // set up API routing and serve
     let router = Router::new()
         .route("/rest/ping", get(api_ping))
-        .route("/rest/ping.view", get(api_ping))
         .route("/rest/getLicense", get(api_get_license))
-        .route("/rest/getLicense.view", get(api_get_license))
+        .route("/rest/getAlbumList", get(api_get_album_list))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,
         ))
         .route("/rest/createUser", get(api_create_user))
-        .route("/rest/createUser.view", get(api_create_user))
         .with_state(state);
     let listener = tokio::net::TcpListener::bind(&host_address)
         .await

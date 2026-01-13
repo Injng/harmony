@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use sea_orm::Set;
 use sea_orm::entity::prelude::*;
 
 #[sea_orm::model]
@@ -15,4 +16,32 @@ pub struct Model {
     pub track: HasOne<super::track::Entity>,
 }
 
-impl ActiveModelBehavior for ActiveModel {}
+impl ActiveModelBehavior for ActiveModel {
+    fn after_save<'life0, 'async_trait, C>(
+        model: Model,
+        db: &'life0 C,
+        _insert: bool,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Model, DbErr>> + Send + 'async_trait>>
+    where
+        C: ConnectionTrait + 'async_trait,
+        Self: Send + 'async_trait,
+        'life0: 'async_trait,
+    {
+        Box::pin(async move {
+            // propagate last_modified to the album via track
+            if let Some(track_id) = model.track_id {
+                if let Some(track) = super::track::Entity::find_by_id(track_id).one(db).await? {
+                    if let Some(album) = super::album::Entity::find_by_id(track.album_id)
+                        .one(db)
+                        .await?
+                    {
+                        let mut album: super::album::ActiveModel = album.into();
+                        album.last_modified = Set(model.last_modified);
+                        album.update(db).await?;
+                    }
+                }
+            }
+            Ok(model)
+        })
+    }
+}

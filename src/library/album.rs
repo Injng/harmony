@@ -1,5 +1,6 @@
-use sea_orm::prelude::*;
-use sea_orm::{ColumnTrait, DatabaseConnection};
+use rand::rng;
+use rand::seq::IteratorRandom;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityLoaderTrait, Order, QueryOrder, prelude::*};
 use uuid::Uuid;
 
 use crate::db::{
@@ -71,4 +72,26 @@ pub async fn album_find(
     }
 
     return None;
+}
+
+/// Gets a list of random albums from the database.
+pub async fn album_get_random_list(len: u32, db: &DatabaseConnection) -> Vec<album::ModelEx> {
+    if let Ok(m) = Album::load().with(Artist).all(db).await {
+        let mut r = rng();
+        return m.into_iter().choose_multiple(&mut r, len as usize);
+    } else {
+        return Vec::new();
+    }
+}
+
+pub async fn album_get_newest_list(len: u32, db: &DatabaseConnection) -> Vec<album::ModelEx> {
+    let paginator = Album::load()
+        .with(Artist)
+        .order_by(album::Column::LastModified, Order::Desc)
+        .paginate(db, len as u64);
+    if let Ok(m) = paginator.fetch().await {
+        return m;
+    } else {
+        return Vec::new();
+    }
 }

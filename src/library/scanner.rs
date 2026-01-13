@@ -100,7 +100,7 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
         track_id
     };
 
-    // update or create file in the database
+    // update or create file in the database (must do this last)
     if let Some(f) = file {
         let mut f: file::ActiveModel = f.into();
         f.last_modified = Set(modified);
