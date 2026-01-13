@@ -18,6 +18,7 @@ use axum::{Router, middleware, routing::get};
 use library::scanner::scan;
 use sea_orm::{Database, DatabaseConnection};
 use settings::Settings;
+use tower_http::cors::CorsLayer;
 
 #[derive(Clone)]
 struct AppState {
@@ -58,6 +59,7 @@ async fn main() {
             auth_middleware,
         ))
         .route("/rest/createUser", get(api_create_user))
+        .layer(CorsLayer::permissive())
         .with_state(state);
     let listener = tokio::net::TcpListener::bind(&host_address)
         .await

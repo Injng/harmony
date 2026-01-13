@@ -9,9 +9,8 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub title: String,
-    #[sea_orm(default_value = "0")]
+    #[sea_orm(default_value = 0)]
     pub plays: u32,
-    #[sea_orm(default_value = "None")]
     pub last_played: Option<DateTime<Utc>>,
     pub album_id: Uuid,
     #[sea_orm(has_one)]
