@@ -4,14 +4,14 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::Value;
+use uuid::Uuid;
 
 use crate::{
     AppState,
-    api::responses::HarmonyResponse,
-    library::album::{album_get_newest_list, album_get_random_list},
+    api::responses::{AlbumListResponse, AlbumResponse, HarmonyResponse, TrackResponse},
+    library::album::{album_get_by_id, album_get_newest_list, album_get_random_list},
+    library::track::track_get_by_id,
 };
-
-use super::responses::AlbumListResponse;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,6 +26,16 @@ pub struct AlbumListParameters {
     list_type: AlbumListType,
     size: Option<u32>,
     _offset: Option<u32>,
+}
+
+#[derive(Deserialize)]
+pub struct AlbumParameters {
+    id: Uuid,
+}
+
+#[derive(Deserialize)]
+pub struct TrackParameters {
+    id: Uuid,
 }
 
 pub async fn api_get_album_list(
@@ -44,7 +54,7 @@ pub async fn api_get_album_list(
             serde_json::to_value(AlbumListResponse {
                 harmony: HarmonyResponse {
                     status: Ok(()),
-                    with_license: true,
+                    with_license: false,
                 },
                 albums: album_get_random_list(len, &state.db).await,
             })
@@ -54,9 +64,65 @@ pub async fn api_get_album_list(
             serde_json::to_value(AlbumListResponse {
                 harmony: HarmonyResponse {
                     status: Ok(()),
-                    with_license: true,
+                    with_license: false,
                 },
                 albums: album_get_newest_list(len, &state.db).await,
+            })
+            .unwrap(),
+        ),
+    }
+}
+
+pub async fn api_get_album(
+    State(state): State<AppState>,
+    Query(params): Query<AlbumParameters>,
+) -> Json<Value> {
+    match album_get_by_id(params.id, &state.db).await {
+        Ok(a) => Json(
+            serde_json::to_value(AlbumResponse {
+                harmony: HarmonyResponse {
+                    status: Ok(()),
+                    with_license: false,
+                },
+                album: Some(a),
+            })
+            .unwrap(),
+        ),
+        Err(e) => Json(
+            serde_json::to_value(AlbumResponse {
+                harmony: HarmonyResponse {
+                    status: Err(e.to_string()),
+                    with_license: false,
+                },
+                album: None,
+            })
+            .unwrap(),
+        ),
+    }
+}
+
+pub async fn api_get_track(
+    State(state): State<AppState>,
+    Query(params): Query<TrackParameters>,
+) -> Json<Value> {
+    match track_get_by_id(params.id, &state.db).await {
+        Ok(t) => Json(
+            serde_json::to_value(TrackResponse {
+                harmony: HarmonyResponse {
+                    status: Ok(()),
+                    with_license: false,
+                },
+                track: Some(t),
+            })
+            .unwrap(),
+        ),
+        Err(e) => Json(
+            serde_json::to_value(TrackResponse {
+                harmony: HarmonyResponse {
+                    status: Err(e.to_string()),
+                    with_license: false,
+                },
+                track: None,
             })
             .unwrap(),
         ),

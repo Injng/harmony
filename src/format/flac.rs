@@ -7,7 +7,7 @@ use nom::{
     number::complete::{be_u8, be_u16, be_u24, be_u32, be_u64, le_u32},
 };
 
-use crate::library::track::Track;
+use crate::library::track::TrackMetadata;
 
 #[derive(Debug, Clone)]
 pub enum FlacBlockType {
@@ -128,7 +128,7 @@ pub struct FlacMetadata {
     pub pictures: Vec<FlacPicture>,
 }
 
-impl Track for FlacMetadata {
+impl TrackMetadata for FlacMetadata {
     fn get_album_name(&self) -> Result<String> {
         if let Some(v) = self.tags.get("ALBUM") {
             return Ok(v[0].clone());

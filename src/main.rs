@@ -8,7 +8,7 @@ mod settings;
 use std::sync::Arc;
 
 use api::{
-    browse::api_get_album_list,
+    browse::{api_get_album, api_get_album_list, api_get_track},
     system::{api_get_license, api_ping},
     users::api_create_user,
 };
@@ -49,6 +49,8 @@ async fn main() {
         .route("/rest/ping", get(api_ping))
         .route("/rest/getLicense", get(api_get_license))
         .route("/rest/getAlbumList", get(api_get_album_list))
+        .route("/rest/getAlbum", get(api_get_album))
+        .route("/rest/getTrack", get(api_get_track))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,

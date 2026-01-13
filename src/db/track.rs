@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
+use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
@@ -22,3 +23,26 @@ pub struct Model {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Serialize for ModelEx {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Track", 6)?;
+        state.serialize_field("id", &self.id.to_string())?;
+        state.serialize_field("title", &self.title)?;
+        state.serialize_field("plays", &self.plays)?;
+        state.serialize_field("lastPlayed", &self.last_played)?;
+        state.serialize_field("albumId", &self.album_id.to_string())?;
+        state.serialize_field(
+            "artists",
+            &self
+                .artists
+                .iter()
+                .map(|a| a.name.clone())
+                .collect::<Vec<_>>(),
+        )?;
+        state.end()
+    }
+}

@@ -1,3 +1,4 @@
+use anyhow::{Result, anyhow};
 use rand::rng;
 use rand::seq::IteratorRandom;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityLoaderTrait, Order, QueryOrder, prelude::*};
@@ -6,6 +7,7 @@ use uuid::Uuid;
 use crate::db::{
     album::{self, Entity as Album, ModelEx},
     artist::Entity as Artist,
+    track::Entity as Track,
 };
 
 /// Checks if an album is a match with the given metadata. Assumes the names are the same.
@@ -84,6 +86,7 @@ pub async fn album_get_random_list(len: u32, db: &DatabaseConnection) -> Vec<alb
     }
 }
 
+/// Gets a list of albums sorted by modify date from the database.
 pub async fn album_get_newest_list(len: u32, db: &DatabaseConnection) -> Vec<album::ModelEx> {
     let paginator = Album::load()
         .with(Artist)
@@ -93,5 +96,20 @@ pub async fn album_get_newest_list(len: u32, db: &DatabaseConnection) -> Vec<alb
         return m;
     } else {
         return Vec::new();
+    }
+}
+
+/// Gets a specific album from the database.
+pub async fn album_get_by_id(id: Uuid, db: &DatabaseConnection) -> Result<album::ModelEx> {
+    if let Ok(Some(a)) = Album::load()
+        .with(Artist)
+        .with(Track)
+        .filter_by_id(id)
+        .one(db)
+        .await
+    {
+        return Ok(a);
+    } else {
+        return Err(anyhow!("[ERROR] Album not found in database"));
     }
 }

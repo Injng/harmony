@@ -29,7 +29,7 @@ impl Serialize for ModelEx {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Album", 7)?;
+        let mut state = serializer.serialize_struct("Album", 8)?;
         state.serialize_field("id", &self.id.to_string())?;
         state.serialize_field("name", &self.name)?;
         state.serialize_field("plays", &self.plays)?;
@@ -44,6 +44,7 @@ impl Serialize for ModelEx {
                 .map(|a| a.name.clone())
                 .collect::<Vec<_>>(),
         )?;
+        state.serialize_field("tracks", &self.tracks)?;
         state.end()
     }
 }

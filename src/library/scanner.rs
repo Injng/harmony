@@ -14,7 +14,7 @@ use crate::{
     format::flac::parse_flac_file,
 };
 
-use super::track::Track;
+use super::track::TrackMetadata;
 
 async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
     // check if file exists in database
