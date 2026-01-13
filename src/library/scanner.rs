@@ -56,7 +56,8 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
             let mut album = album::ActiveModel::builder()
                 .set_id(album_id)
                 .set_name(album_name.trim())
-                .set_musicbrainz_id(musicbrainz_album_id);
+                .set_musicbrainz_id(musicbrainz_album_id)
+                .set_last_modified(modified);
             if let Some(aa) = album_artists {
                 for artist in &aa {
                     album = album.add_artist(artist_insert(artist, db).await);
