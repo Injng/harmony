@@ -2,10 +2,13 @@ use anyhow::{Result, anyhow};
 use sea_orm::{DatabaseConnection, EntityLoaderTrait};
 use uuid::Uuid;
 
-use crate::db::{
-    artist::Entity as Artist,
-    file::Entity as File,
-    track::{self, Entity as Track},
+use crate::{
+    db::{
+        artist::Entity as Artist,
+        file::Entity as File,
+        track::{self, Entity as Track},
+    },
+    format::flac::FlacPictureType,
 };
 
 pub trait TrackMetadata {
@@ -17,6 +20,7 @@ pub trait TrackMetadata {
     // optional metadata fields
     fn get_album_artists(&self) -> Option<Vec<String>>;
     fn get_musicbrainz_album_id(&self) -> Option<String>;
+    fn get_picture_data(&self, priority: FlacPictureType) -> Option<Vec<u8>>;
 }
 
 /// Gets a specific track from the database.

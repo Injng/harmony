@@ -35,7 +35,7 @@ impl FlacBlockType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum FlacPictureType {
     Other,
     PngIcon,
@@ -168,6 +168,19 @@ impl TrackMetadata for FlacMetadata {
     fn get_musicbrainz_album_id(&self) -> Option<String> {
         if let Some(v) = self.tags.get("MUSICBRAINZ_ALBUMID") {
             return Some(v[0].clone());
+        } else {
+            return None;
+        }
+    }
+
+    fn get_picture_data(&self, priority: FlacPictureType) -> Option<Vec<u8>> {
+        for picture in &self.pictures {
+            if picture.picture_type == priority {
+                return Some(picture.data.clone());
+            }
+        }
+        if self.pictures.len() > 0 {
+            return Some(self.pictures[0].data.clone());
         } else {
             return None;
         }

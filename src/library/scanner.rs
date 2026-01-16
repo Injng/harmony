@@ -7,6 +7,7 @@ use sea_orm::{ColumnTrait, DatabaseConnection, ModelTrait, Set};
 use walkdir::WalkDir;
 
 use crate::db::{album, artist, track};
+use crate::format::flac::FlacPictureType;
 use crate::library::album::album_find;
 use crate::library::artist::artist_insert;
 use crate::{
@@ -38,6 +39,7 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
     let artists: Vec<String> = metadata.get_artists()?;
     let album_artists: Option<Vec<String>> = metadata.get_album_artists();
     let musicbrainz_album_id: Option<String> = metadata.get_musicbrainz_album_id();
+    let picture: Option<Vec<u8>> = metadata.get_picture_data(FlacPictureType::FrontCover);
 
     // check if album exists in database already
     let album_id = match album_find(
@@ -81,6 +83,7 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
         let mut track = track::ActiveModel::builder()
             .set_id(track_id)
             .set_title(track_name.trim())
+            .set_picture(picture)
             .set_album_id(album_id);
         for artist in artist_models {
             track = track.add_artist(artist);
@@ -93,6 +96,7 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
         let mut track = track::ActiveModel::builder()
             .set_id(track_id)
             .set_title(track_name.trim())
+            .set_picture(picture)
             .set_album_id(album_id);
         for artist in artist_models {
             track = track.add_artist(artist);

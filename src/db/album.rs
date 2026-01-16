@@ -1,3 +1,4 @@
+use base64::{Engine, engine::general_purpose};
 use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
@@ -9,6 +10,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub name: String,
+    pub picture: Option<Vec<u8>>,
     #[sea_orm(default_value = 0)]
     pub plays: u32,
     pub last_played: Option<DateTime<Utc>>,
@@ -28,9 +30,14 @@ impl Serialize for ModelEx {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Album", 8)?;
+        let mut state = serializer.serialize_struct("Album", 9)?;
         state.serialize_field("id", &self.id.to_string())?;
         state.serialize_field("name", &self.name)?;
+        if let Some(p) = &self.picture {
+            state.serialize_field("picture", &Some(general_purpose::STANDARD.encode(p)))?;
+        } else {
+            state.serialize_field("picture", &None::<String>)?;
+        }
         state.serialize_field("plays", &self.plays)?;
         state.serialize_field("lastPlayed", &self.last_played)?;
         state.serialize_field("lastModified", &self.last_modified)?;
