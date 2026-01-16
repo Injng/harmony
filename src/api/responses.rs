@@ -1,6 +1,6 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
-use crate::db::{album, track};
+use crate::db::{album, artist, track};
 
 const HARMONY_VERSION: &str = "0.1.0";
 const SERVER_TYPE: &str = "harmony";
@@ -56,6 +56,12 @@ impl Serialize for HarmonyLicense {
         state.serialize_field("valid", &true)?;
         state.end()
     }
+}
+
+#[derive(serde::Serialize)]
+pub struct ArtistListResponse {
+    pub harmony: HarmonyResponse,
+    pub artists: Vec<artist::Model>,
 }
 
 #[derive(serde::Serialize)]

@@ -1,5 +1,5 @@
 use sea_orm::entity::prelude::*;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, Set};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, Order, QueryOrder, QuerySelect, Set};
 use uuid::Uuid;
 
 use crate::db::artist::{self, Entity as Artist};
@@ -28,5 +28,19 @@ pub async fn artist_insert(name: &str, db: &DatabaseConnection) -> artist::Activ
             id: Set(Uuid::new_v4()),
             name: Set(name.trim().to_owned()),
         };
+    }
+}
+
+/// Returns a sorted list of all the artists in the database.
+pub async fn artist_get_list(len: u32, db: &DatabaseConnection) -> Vec<artist::Model> {
+    if let Ok(m) = Artist::find()
+        .order_by(artist::Column::Name, Order::Asc)
+        .limit(len as u64)
+        .all(db)
+        .await
+    {
+        return m;
+    } else {
+        return Vec::new();
     }
 }

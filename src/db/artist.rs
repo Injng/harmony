@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
@@ -14,3 +15,15 @@ pub struct Model {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Serialize for Model {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Artist", 2)?;
+        state.serialize_field("id", &self.id.to_string())?;
+        state.serialize_field("name", &self.name)?;
+        state.end()
+    }
+}

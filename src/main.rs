@@ -8,7 +8,7 @@ mod settings;
 use std::sync::Arc;
 
 use api::{
-    browse::{api_get_album, api_get_album_list, api_get_track},
+    browse::{api_get_album, api_get_album_list, api_get_artist_list, api_get_track},
     retrieve::api_stream_track,
     system::{api_get_license, api_ping},
     users::api_create_user,
@@ -50,6 +50,7 @@ async fn main() {
     let router = Router::new()
         .route("/rest/ping", get(api_ping))
         .route("/rest/getLicense", get(api_get_license))
+        .route("/rest/getArtistList", get(api_get_artist_list))
         .route("/rest/getAlbumList", get(api_get_album_list))
         .route("/rest/getAlbum", get(api_get_album))
         .route("/rest/getTrack", get(api_get_track))

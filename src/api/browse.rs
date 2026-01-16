@@ -9,9 +9,14 @@ use uuid::Uuid;
 use crate::{
     AppState,
     api::responses::{AlbumListResponse, AlbumResponse, HarmonyResponse, TrackResponse},
-    library::album::{album_get_by_id, album_get_newest_list, album_get_random_list},
-    library::track::track_get_by_id,
+    library::{
+        album::{album_get_by_id, album_get_newest_list, album_get_random_list},
+        artist::artist_get_list,
+        track::track_get_by_id,
+    },
 };
+
+use super::responses::ArtistListResponse;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -29,6 +34,12 @@ pub struct AlbumListParameters {
 }
 
 #[derive(Deserialize)]
+pub struct ArtistListParameters {
+    size: Option<u32>,
+    _offset: Option<u32>,
+}
+
+#[derive(Deserialize)]
 pub struct AlbumParameters {
     id: Uuid,
 }
@@ -36,6 +47,28 @@ pub struct AlbumParameters {
 #[derive(Deserialize)]
 pub struct TrackParameters {
     id: Uuid,
+}
+
+pub async fn api_get_artist_list(
+    State(state): State<AppState>,
+    Query(params): Query<ArtistListParameters>,
+) -> Json<Value> {
+    // default length is 10
+    let mut len = 10;
+    if let Some(l) = params.size {
+        len = l;
+    }
+
+    Json(
+        serde_json::to_value(ArtistListResponse {
+            harmony: HarmonyResponse {
+                status: Ok(()),
+                with_license: false,
+            },
+            artists: artist_get_list(len, &state.db).await,
+        })
+        .unwrap(),
+    )
 }
 
 pub async fn api_get_album_list(
