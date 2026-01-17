@@ -1,8 +1,16 @@
+use anyhow::{Result, anyhow};
 use sea_orm::entity::prelude::*;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, Order, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityLoaderTrait, EntityTrait, Order, QueryOrder,
+    QuerySelect, Set,
+};
 use uuid::Uuid;
 
-use crate::db::artist::{self, Entity as Artist};
+use crate::db::{
+    album::Entity as Album,
+    artist::{self, Entity as Artist},
+    track::Entity as Track,
+};
 
 /// Checks if an artist already exists in the database by matching the given metadata.
 /// A match is found if there is an artist with the same artist_name.
@@ -42,5 +50,20 @@ pub async fn artist_get_list(len: u32, db: &DatabaseConnection) -> Vec<artist::M
         return m;
     } else {
         return Vec::new();
+    }
+}
+
+/// Gets a specific artist from the database.
+pub async fn artist_get_by_id(id: Uuid, db: &DatabaseConnection) -> Result<artist::ModelEx> {
+    if let Ok(Some(a)) = Artist::load()
+        .with(Album)
+        .with(Track)
+        .filter_by_id(id)
+        .one(db)
+        .await
+    {
+        return Ok(a);
+    } else {
+        return Err(anyhow!("[ERROR] Artist not found in database"));
     }
 }

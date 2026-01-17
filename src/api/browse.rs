@@ -11,12 +11,12 @@ use crate::{
     api::responses::{AlbumListResponse, AlbumResponse, HarmonyResponse, TrackResponse},
     library::{
         album::{album_get_by_id, album_get_newest_list, album_get_random_list},
-        artist::artist_get_list,
+        artist::{artist_get_by_id, artist_get_list},
         track::track_get_by_id,
     },
 };
 
-use super::responses::ArtistListResponse;
+use super::responses::{ArtistListResponse, ArtistResponse};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -37,6 +37,11 @@ pub struct AlbumListParameters {
 pub struct ArtistListParameters {
     size: Option<u32>,
     _offset: Option<u32>,
+}
+
+#[derive(Deserialize)]
+pub struct ArtistParameters {
+    id: Uuid,
 }
 
 #[derive(Deserialize)]
@@ -69,6 +74,34 @@ pub async fn api_get_artist_list(
         })
         .unwrap(),
     )
+}
+
+pub async fn api_get_artist(
+    State(state): State<AppState>,
+    Query(params): Query<ArtistParameters>,
+) -> Json<Value> {
+    match artist_get_by_id(params.id, &state.db).await {
+        Ok(a) => Json(
+            serde_json::to_value(ArtistResponse {
+                harmony: HarmonyResponse {
+                    status: Ok(()),
+                    with_license: false,
+                },
+                artist: Some(a),
+            })
+            .unwrap(),
+        ),
+        Err(e) => Json(
+            serde_json::to_value(ArtistResponse {
+                harmony: HarmonyResponse {
+                    status: Err(e.to_string()),
+                    with_license: false,
+                },
+                artist: None,
+            })
+            .unwrap(),
+        ),
+    }
 }
 
 pub async fn api_get_album_list(

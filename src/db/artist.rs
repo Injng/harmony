@@ -9,9 +9,9 @@ pub struct Model {
     pub id: Uuid,
     pub name: String,
     #[sea_orm(has_many, via = "album_artists")]
-    pub album: HasMany<super::album::Entity>,
+    pub albums: HasMany<super::album::Entity>,
     #[sea_orm(has_many, via = "track_artists")]
-    pub track: HasMany<super::track::Entity>,
+    pub tracks: HasMany<super::track::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {}
@@ -24,6 +24,20 @@ impl Serialize for Model {
         let mut state = serializer.serialize_struct("Artist", 2)?;
         state.serialize_field("id", &self.id.to_string())?;
         state.serialize_field("name", &self.name)?;
+        state.end()
+    }
+}
+
+impl Serialize for ModelEx {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Artist", 2)?;
+        state.serialize_field("id", &self.id.to_string())?;
+        state.serialize_field("name", &self.name)?;
+        state.serialize_field("albums", &self.albums)?;
+        state.serialize_field("tracks", &self.tracks)?;
         state.end()
     }
 }

@@ -71,6 +71,12 @@ pub struct AlbumListResponse {
 }
 
 #[derive(serde::Serialize)]
+pub struct ArtistResponse {
+    pub harmony: HarmonyResponse,
+    pub artist: Option<artist::ModelEx>,
+}
+
+#[derive(serde::Serialize)]
 pub struct AlbumResponse {
     pub harmony: HarmonyResponse,
     pub album: Option<album::ModelEx>,
