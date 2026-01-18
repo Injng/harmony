@@ -12,6 +12,10 @@ use api::{
         api_get_album, api_get_album_list, api_get_artist, api_get_artist_list, api_get_track,
     },
     retrieve::api_stream_track,
+    shelf::{
+        api_create_playlist, api_delete_playlist, api_get_playlist, api_get_playlists,
+        api_update_playlist,
+    },
     system::{api_get_license, api_ping},
     users::api_create_user,
 };
@@ -58,6 +62,11 @@ async fn main() {
         .route("/rest/getAlbum", get(api_get_album))
         .route("/rest/getTrack", get(api_get_track))
         .route("/rest/streamTrack", get(api_stream_track))
+        .route("/rest/getPlaylists", get(api_get_playlists))
+        .route("/rest/getPlaylist", get(api_get_playlist))
+        .route("/rest/createPlaylist", get(api_create_playlist))
+        .route("/rest/updatePlaylist", get(api_update_playlist))
+        .route("/rest/deletePlaylist", get(api_delete_playlist))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,

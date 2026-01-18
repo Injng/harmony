@@ -1,6 +1,6 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
-use crate::db::{album, artist, track};
+use crate::db::{album, artist, playlist, track};
 
 const HARMONY_VERSION: &str = "0.1.0";
 const SERVER_TYPE: &str = "harmony";
@@ -86,4 +86,16 @@ pub struct AlbumResponse {
 pub struct TrackResponse {
     pub harmony: HarmonyResponse,
     pub track: Option<track::ModelEx>,
+}
+
+#[derive(serde::Serialize)]
+pub struct PlaylistListResponse {
+    pub harmony: HarmonyResponse,
+    pub playlists: Vec<playlist::Model>,
+}
+
+#[derive(serde::Serialize)]
+pub struct PlaylistResponse {
+    pub harmony: HarmonyResponse,
+    pub playlist: Option<playlist::ModelEx>,
 }

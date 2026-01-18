@@ -21,6 +21,8 @@ pub struct Model {
     pub album: HasOne<super::album::Entity>,
     #[sea_orm(has_many, via = "track_artists")]
     pub artists: HasMany<super::artist::Entity>,
+    #[sea_orm(has_many, via = "track_playlists")]
+    pub playlists: HasMany<super::playlist::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {
