@@ -14,6 +14,7 @@ pub struct EpubMetadata {
     pub identifier: Option<String>,
     pub language: Option<String>,
     pub creator: Option<String>,
+    pub cover: Option<Vec<u8>>,
 }
 
 fn parse_tag<'a>(input: &'a str, tag_name: &str) -> Result<String> {
@@ -38,14 +39,40 @@ fn parse_tag<'a>(input: &'a str, tag_name: &str) -> Result<String> {
     Ok(content.to_string())
 }
 
-fn parse_epub_metadata(input: &str) -> Result<EpubMetadata> {
-    println!("{}", input);
-    Ok(EpubMetadata {
-        title: parse_tag(input, "dc:title").ok(),
-        identifier: parse_tag(input, "dc:identifier").ok(),
-        language: parse_tag(input, "dc:language").ok(),
-        creator: parse_tag(input, "dc:creator").ok(),
-    })
+/// Parse the cover item ID from `<meta name="cover" content="cover_id"/>`
+fn parse_cover_id(input: &str) -> Option<String> {
+    input
+        .split("<meta")
+        .find(|s| s.contains("name=\"cover\""))
+        .and_then(|s| s.split("content=\"").nth(1))
+        .and_then(|s| s.split('"').next())
+        .map(|s| s.to_string())
+}
+
+/// Parse the cover href from `<item id="cover_id" href="path/to/cover.jpg" .../>`
+fn parse_cover_href(input: &str, cover_id: &str) -> Option<String> {
+    let id_pattern = format!("id=\"{}\"", cover_id);
+    input
+        .split("<item")
+        .find(|s| s.contains(&id_pattern))
+        .and_then(|s| s.split("href=\"").nth(1))
+        .and_then(|s| s.split('"').next())
+        .map(|s| s.to_string())
+}
+
+fn parse_epub_metadata(input: &str) -> (EpubMetadata, Option<String>) {
+    let cover_href = parse_cover_id(input).and_then(|id| parse_cover_href(input, &id));
+
+    (
+        EpubMetadata {
+            title: parse_tag(input, "dc:title").ok(),
+            identifier: parse_tag(input, "dc:identifier").ok(),
+            language: parse_tag(input, "dc:language").ok(),
+            creator: parse_tag(input, "dc:creator").ok(),
+            cover: None, // populated later from archive
+        },
+        cover_href,
+    )
 }
 
 pub fn parse_epub_file(path: &Path) -> Result<EpubMetadata> {
@@ -67,10 +94,24 @@ pub fn parse_epub_file(path: &Path) -> Result<EpubMetadata> {
     };
 
     // get the contents of the opf file and parse the metadata from it
-    let mut opf_file = archive.by_name(&opf_path)?;
-    let mut opf_contents = String::new();
-    opf_file.read_to_string(&mut opf_contents)?;
-    let metadata = parse_epub_metadata(&opf_contents)
-        .map_err(|e| anyhow!("[ERROR] Failed to parse OPF metadata: {:?}", e))?;
+    let (mut metadata, cover_href) = {
+        let mut opf_file = archive.by_name(&opf_path)?;
+        let mut opf_contents = String::new();
+        opf_file.read_to_string(&mut opf_contents)?;
+        parse_epub_metadata(&opf_contents)
+    };
+
+    // read cover image if present
+    if let Some(href) = cover_href {
+        let opf_dir = Path::new(&opf_path).parent().unwrap_or(Path::new(""));
+        let cover_path = opf_dir.join(&href).to_string_lossy().to_string();
+        if let Ok(mut cover_file) = archive.by_name(&cover_path) {
+            let mut cover_data = Vec::new();
+            if cover_file.read_to_end(&mut cover_data).is_ok() {
+                metadata.cover = Some(cover_data);
+            }
+        }
+    }
+
     Ok(metadata)
 }
