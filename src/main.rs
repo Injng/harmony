@@ -9,7 +9,8 @@ use std::sync::Arc;
 
 use api::{
     browse::{
-        api_get_album, api_get_album_list, api_get_artist, api_get_artist_list, api_get_track,
+        api_get_album, api_get_album_list, api_get_artist, api_get_artist_list, api_get_book,
+        api_get_books, api_get_track,
     },
     retrieve::api_stream_track,
     shelf::{
@@ -67,6 +68,8 @@ async fn main() {
         .route("/rest/createPlaylist", get(api_create_playlist))
         .route("/rest/updatePlaylist", get(api_update_playlist))
         .route("/rest/deletePlaylist", get(api_delete_playlist))
+        .route("/rest/getBooks", get(api_get_books))
+        .route("/rest/getBook", get(api_get_book))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,

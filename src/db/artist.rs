@@ -12,6 +12,8 @@ pub struct Model {
     pub albums: HasMany<super::album::Entity>,
     #[sea_orm(has_many, via = "track_artists")]
     pub tracks: HasMany<super::track::Entity>,
+    #[sea_orm(has_many, via = "book_artists")]
+    pub books: HasMany<super::book::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {}
@@ -38,6 +40,7 @@ impl Serialize for ModelEx {
         state.serialize_field("name", &self.name)?;
         state.serialize_field("albums", &self.albums)?;
         state.serialize_field("tracks", &self.tracks)?;
+        state.serialize_field("books", &self.books)?;
         state.end()
     }
 }

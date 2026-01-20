@@ -12,11 +12,16 @@ use crate::{
     library::{
         album::{album_get_by_id, album_get_newest_list, album_get_random_list},
         artist::{artist_get_by_id, artist_get_list},
+        book::{book_get_by_id, book_get_list},
         track::track_get_by_id,
     },
 };
 
-use super::responses::{ArtistListResponse, ArtistResponse};
+use super::responses::{ArtistListResponse, ArtistResponse, BookListResponse, BookResponse};
+
+/* -------------------------------------------------------------------------------------------
+    MUSIC BROWSING
+------------------------------------------------------------------------------------------- */
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -189,6 +194,71 @@ pub async fn api_get_track(
                     with_license: false,
                 },
                 track: None,
+            })
+            .unwrap(),
+        ),
+    }
+}
+
+/* ------------------------------------------------------------------------------------------
+    BOOK BROWSING
+------------------------------------------------------------------------------------------ */
+
+#[derive(Deserialize)]
+pub struct BookListParameters {
+    size: Option<u32>,
+    _offset: Option<u32>,
+}
+
+#[derive(Deserialize)]
+pub struct BookParameters {
+    id: Uuid,
+}
+
+pub async fn api_get_books(
+    State(state): State<AppState>,
+    Query(params): Query<BookListParameters>,
+) -> Json<Value> {
+    // default length is 10
+    let mut len = 10;
+    if let Some(l) = params.size {
+        len = l;
+    }
+
+    Json(
+        serde_json::to_value(BookListResponse {
+            harmony: HarmonyResponse {
+                status: Ok(()),
+                with_license: false,
+            },
+            books: book_get_list(len, &state.db).await,
+        })
+        .unwrap(),
+    )
+}
+
+pub async fn api_get_book(
+    State(state): State<AppState>,
+    Query(params): Query<BookParameters>,
+) -> Json<Value> {
+    match book_get_by_id(params.id, &state.db).await {
+        Ok(a) => Json(
+            serde_json::to_value(BookResponse {
+                harmony: HarmonyResponse {
+                    status: Ok(()),
+                    with_license: false,
+                },
+                book: Some(a),
+            })
+            .unwrap(),
+        ),
+        Err(e) => Json(
+            serde_json::to_value(BookResponse {
+                harmony: HarmonyResponse {
+                    status: Err(e.to_string()),
+                    with_license: false,
+                },
+                book: None,
             })
             .unwrap(),
         ),
