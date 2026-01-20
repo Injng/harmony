@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, fs, path::Path};
+use std::{fs, path::Path};
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
@@ -6,7 +6,8 @@ use sea_orm::entity::prelude::*;
 use sea_orm::{ColumnTrait, DatabaseConnection, ModelTrait, Set};
 use walkdir::WalkDir;
 
-use crate::db::{album, artist, track};
+use crate::db::{album, artist, book, track};
+use crate::format::epub::parse_epub_file;
 use crate::format::flac::FlacPictureType;
 use crate::library::album::album_find;
 use crate::library::artist::artist_insert;
@@ -16,6 +17,78 @@ use crate::{
 };
 
 use super::track::TrackMetadata;
+
+async fn scan_epub(path: &Path, db: &DatabaseConnection) -> Result<()> {
+    // check if file exists in database
+    let file: Option<file::Model> = File::find()
+        .filter(file::Column::Path.eq(path.display().to_string()))
+        .one(db)
+        .await?;
+
+    // if file exists, only continue if last modified is more recent
+    let modified: DateTime<Utc> = fs::metadata(path)?.modified()?.into();
+    if let Some(f) = &file {
+        if modified <= f.last_modified {
+            return Ok(());
+        }
+    }
+
+    // extract useful metadata from file
+    let metadata = parse_epub_file(path)?;
+    let mut artists: Vec<String> = Vec::new();
+    if let Some(a) = metadata.creator {
+        artists.push(a);
+    }
+
+    // turn list of artists into active models
+    let mut artist_models: Vec<artist::ActiveModel> = Vec::new();
+    for artist in &artists {
+        artist_models.push(artist_insert(artist, db).await);
+    }
+
+    // check if file has an existing book (update case) or needs new book (insert case)
+    let existing_book_id = file.as_ref().and_then(|f| f.track_id);
+    let book_id = if let Some(book_id) = existing_book_id {
+        // update existing book
+        let mut book = book::ActiveModel::builder()
+            .set_id(book_id)
+            .set_title(metadata.title.unwrap_or("".to_owned()))
+            .set_picture(metadata.cover);
+        for artist in artist_models {
+            book = book.add_artist(artist);
+        }
+        let _ = book.save(db).await?;
+        book_id
+    } else {
+        // insert new book
+        let book_id = Uuid::new_v4();
+        let mut book = book::ActiveModel::builder()
+            .set_id(book_id)
+            .set_title(metadata.title.unwrap_or("".to_owned()))
+            .set_picture(metadata.cover);
+        for artist in artist_models {
+            book = book.add_artist(artist);
+        }
+        let _ = book.insert(db).await?;
+        book_id
+    };
+
+    // update or create file in the database (must do this last)
+    if let Some(f) = file {
+        let mut f: file::ActiveModel = f.into();
+        f.last_modified = Set(modified);
+        let _ = f.update(db).await?;
+    } else {
+        let f = file::ActiveModel::builder()
+            .set_id(Uuid::new_v4())
+            .set_path(path.display().to_string())
+            .set_last_modified(modified)
+            .set_book_id(book_id);
+        let _ = f.insert(db).await?;
+    }
+
+    return Ok(());
+}
 
 async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
     // check if file exists in database
@@ -162,9 +235,14 @@ pub async fn scan(path: &str, db: &DatabaseConnection) -> Result<()> {
     for entry in WalkDir::new(path) {
         let entry = entry?;
         let path = entry.path();
-        if entry.file_type().is_file() && path.extension() == Some(OsStr::new("flac")) {
-            let _ = scan_flac(path, db).await?;
+        if !entry.file_type().is_file() {
+            continue;
         }
+        match path.extension().and_then(|s| s.to_str()) {
+            Some("flac") => scan_flac(path, db).await?,
+            Some("epub") => scan_epub(path, db).await?,
+            _ => continue,
+        };
     }
     Ok(())
 }

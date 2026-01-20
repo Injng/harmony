@@ -14,6 +14,10 @@ pub struct Model {
     pub track_id: Option<Uuid>,
     #[sea_orm(belongs_to, from = "track_id", to = "id", on_delete = "Cascade")]
     pub track: HasOne<super::track::Entity>,
+    #[sea_orm(unique)]
+    pub book_id: Option<Uuid>,
+    #[sea_orm(belongs_to, from = "book_id", to = "id", on_delete = "Cascade")]
+    pub book: HasOne<super::book::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {
@@ -21,7 +25,9 @@ impl ActiveModelBehavior for ActiveModel {
         model: Model,
         db: &'life0 C,
         _insert: bool,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Model, DbErr>> + Send + 'async_trait>>
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<Model, DbErr>> + Send + 'async_trait>,
+    >
     where
         C: ConnectionTrait + 'async_trait,
         Self: Send + 'async_trait,

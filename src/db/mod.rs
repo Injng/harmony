@@ -1,6 +1,8 @@
 pub mod album;
 pub mod album_artists;
 pub mod artist;
+pub mod book;
+pub mod book_artists;
 pub mod file;
 pub mod playlist;
 pub mod track;
