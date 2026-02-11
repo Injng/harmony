@@ -53,6 +53,21 @@ impl ActiveModelBehavior for ActiveModel {
     }
 }
 
+impl Serialize for Model {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Track", 5)?;
+        state.serialize_field("id", &self.id.to_string())?;
+        state.serialize_field("title", &self.title)?;
+        state.serialize_field("plays", &self.plays)?;
+        state.serialize_field("lastPlayed", &self.last_played)?;
+        state.serialize_field("albumId", &self.album_id.to_string())?;
+        state.end()
+    }
+}
+
 impl Serialize for ModelEx {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

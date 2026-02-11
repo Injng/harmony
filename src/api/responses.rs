@@ -111,3 +111,11 @@ pub struct BookResponse {
     pub harmony: HarmonyResponse,
     pub book: Option<book::ModelEx>,
 }
+
+#[derive(serde::Serialize)]
+pub struct StarredResponse {
+    pub harmony: HarmonyResponse,
+    pub tracks: Vec<track::Model>,
+    pub albums: Vec<album::Model>,
+    pub books: Vec<book::Model>,
+}

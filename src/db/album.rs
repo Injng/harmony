@@ -25,6 +25,27 @@ pub struct Model {
 
 impl ActiveModelBehavior for ActiveModel {}
 
+impl Serialize for Model {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Album", 7)?;
+        state.serialize_field("id", &self.id.to_string())?;
+        state.serialize_field("name", &self.name)?;
+        if let Some(p) = &self.picture {
+            state.serialize_field("picture", &Some(general_purpose::STANDARD.encode(p)))?;
+        } else {
+            state.serialize_field("picture", &None::<String>)?;
+        }
+        state.serialize_field("plays", &self.plays)?;
+        state.serialize_field("lastPlayed", &self.last_played)?;
+        state.serialize_field("lastModified", &self.last_modified)?;
+        state.serialize_field("musicbrainzId", &self.musicbrainz_id)?;
+        state.end()
+    }
+}
+
 impl Serialize for ModelEx {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

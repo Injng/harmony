@@ -8,9 +8,13 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    api::responses::{HarmonyResponse, PlaylistListResponse, PlaylistResponse},
+    api::responses::{HarmonyResponse, PlaylistListResponse, PlaylistResponse, StarredResponse},
     library::playlist::{
         playlist_create, playlist_delete, playlist_get_by_id, playlist_get_list, playlist_update,
+    },
+    library::shelf::{
+        get_starred_albums, get_starred_books, get_starred_tracks, star_album, star_book,
+        star_track, unstar_album, unstar_book, unstar_track,
     },
 };
 
@@ -170,4 +174,128 @@ pub async fn api_delete_playlist(
             .unwrap(),
         ),
     }
+}
+
+#[derive(Deserialize)]
+pub struct StarParameters {
+    u: String,
+    #[serde(rename = "trackId")]
+    track_id: Option<Uuid>,
+    #[serde(rename = "albumId")]
+    album_id: Option<Uuid>,
+    #[serde(rename = "bookId")]
+    book_id: Option<Uuid>,
+}
+
+#[derive(Deserialize)]
+pub struct GetStarredParameters {
+    u: String,
+}
+
+pub async fn api_star(
+    State(state): State<AppState>,
+    Query(params): Query<StarParameters>,
+) -> Json<Value> {
+    let mut errors: Vec<String> = Vec::new();
+
+    if let Some(track_id) = params.track_id {
+        if let Err(e) = star_track(&params.u, track_id, &state.db).await {
+            errors.push(e.to_string());
+        }
+    }
+
+    if let Some(album_id) = params.album_id {
+        if let Err(e) = star_album(&params.u, album_id, &state.db).await {
+            errors.push(e.to_string());
+        }
+    }
+
+    if let Some(book_id) = params.book_id {
+        if let Err(e) = star_book(&params.u, book_id, &state.db).await {
+            errors.push(e.to_string());
+        }
+    }
+
+    if errors.is_empty() {
+        Json(
+            serde_json::to_value(HarmonyResponse {
+                status: Ok(()),
+                with_license: false,
+            })
+            .unwrap(),
+        )
+    } else {
+        Json(
+            serde_json::to_value(HarmonyResponse {
+                status: Err(errors.join("; ")),
+                with_license: false,
+            })
+            .unwrap(),
+        )
+    }
+}
+
+pub async fn api_unstar(
+    State(state): State<AppState>,
+    Query(params): Query<StarParameters>,
+) -> Json<Value> {
+    let mut errors: Vec<String> = Vec::new();
+
+    if let Some(track_id) = params.track_id {
+        if let Err(e) = unstar_track(&params.u, track_id, &state.db).await {
+            errors.push(e.to_string());
+        }
+    }
+
+    if let Some(album_id) = params.album_id {
+        if let Err(e) = unstar_album(&params.u, album_id, &state.db).await {
+            errors.push(e.to_string());
+        }
+    }
+
+    if let Some(book_id) = params.book_id {
+        if let Err(e) = unstar_book(&params.u, book_id, &state.db).await {
+            errors.push(e.to_string());
+        }
+    }
+
+    if errors.is_empty() {
+        Json(
+            serde_json::to_value(HarmonyResponse {
+                status: Ok(()),
+                with_license: false,
+            })
+            .unwrap(),
+        )
+    } else {
+        Json(
+            serde_json::to_value(HarmonyResponse {
+                status: Err(errors.join("; ")),
+                with_license: false,
+            })
+            .unwrap(),
+        )
+    }
+}
+
+pub async fn api_get_starred(
+    State(state): State<AppState>,
+    Query(params): Query<GetStarredParameters>,
+) -> Json<Value> {
+    let tracks = get_starred_tracks(&params.u, &state.db).await.unwrap_or_default();
+    let albums = get_starred_albums(&params.u, &state.db).await.unwrap_or_default();
+    let books = get_starred_books(&params.u, &state.db).await.unwrap_or_default();
+
+    Json(
+        serde_json::to_value(StarredResponse {
+            harmony: HarmonyResponse {
+                status: Ok(()),
+                with_license: false,
+            },
+            tracks,
+            albums,
+            books,
+        })
+        .unwrap(),
+    )
 }

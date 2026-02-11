@@ -15,7 +15,7 @@ use api::{
     retrieve::{api_fetch_book, api_stream_track},
     shelf::{
         api_create_playlist, api_delete_playlist, api_get_playlist, api_get_playlists,
-        api_update_playlist,
+        api_get_starred, api_star, api_unstar, api_update_playlist,
     },
     system::{api_get_license, api_ping},
     users::api_create_user,
@@ -71,6 +71,9 @@ async fn main() {
         .route("/rest/getBooks", get(api_get_books))
         .route("/rest/getBook", get(api_get_book))
         .route("/rest/fetchBook", get(api_fetch_book))
+        .route("/rest/star", get(api_star))
+        .route("/rest/unstar", get(api_unstar))
+        .route("/rest/getStarred", get(api_get_starred))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,
