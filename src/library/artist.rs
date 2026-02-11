@@ -35,6 +35,7 @@ pub async fn artist_insert(name: &str, db: &DatabaseConnection) -> artist::Activ
         return artist::ActiveModel {
             id: Set(Uuid::new_v4()),
             name: Set(name.trim().to_owned()),
+            picture: Set(None),
         };
     }
 }
@@ -66,4 +67,16 @@ pub async fn artist_get_by_id(id: Uuid, db: &DatabaseConnection) -> Result<artis
     } else {
         return Err(anyhow!("[ERROR] Artist not found in database"));
     }
+}
+
+/// Sets the picture of a specific artist in the database.
+pub async fn artist_set_picture(
+    id: Uuid,
+    db: &DatabaseConnection,
+    artist_picture: Vec<u8>,
+) -> Result<()> {
+    let mut artist = artist::ActiveModel::builder().set_id(id);
+    artist = artist.set_picture(Some(artist_picture));
+    let _ = artist.save(db).await?;
+    Ok(())
 }

@@ -18,10 +18,14 @@ use api::{
         api_get_starred, api_star, api_unstar, api_update_playlist,
     },
     system::{api_get_license, api_ping},
+    upload::api_upload_artist_picture,
     users::api_create_user,
 };
 use auth::middleware::auth_middleware;
-use axum::{Router, middleware, routing::get};
+use axum::{
+    Router, middleware,
+    routing::{get, post},
+};
 use library::scanner::scan;
 use sea_orm::{Database, DatabaseConnection};
 use settings::Settings;
@@ -55,22 +59,27 @@ async fn main() {
 
     // set up API routing and serve
     let router = Router::new()
+        // SYSTEM
         .route("/rest/ping", get(api_ping))
         .route("/rest/getLicense", get(api_get_license))
+        // MUSIC LIBRARY
         .route("/rest/getAlbumList", get(api_get_album_list))
         .route("/rest/getArtistList", get(api_get_artist_list))
         .route("/rest/getArtist", get(api_get_artist))
+        .route("/rest/uploadArtistPicture", post(api_upload_artist_picture))
         .route("/rest/getAlbum", get(api_get_album))
         .route("/rest/getTrack", get(api_get_track))
         .route("/rest/streamTrack", get(api_stream_track))
+        // BOOK LIBRARY
+        .route("/rest/getBooks", get(api_get_books))
+        .route("/rest/getBook", get(api_get_book))
+        .route("/rest/fetchBook", get(api_fetch_book))
+        // SHELF
         .route("/rest/getPlaylists", get(api_get_playlists))
         .route("/rest/getPlaylist", get(api_get_playlist))
         .route("/rest/createPlaylist", get(api_create_playlist))
         .route("/rest/updatePlaylist", get(api_update_playlist))
         .route("/rest/deletePlaylist", get(api_delete_playlist))
-        .route("/rest/getBooks", get(api_get_books))
-        .route("/rest/getBook", get(api_get_book))
-        .route("/rest/fetchBook", get(api_fetch_book))
         .route("/rest/star", get(api_star))
         .route("/rest/unstar", get(api_unstar))
         .route("/rest/getStarred", get(api_get_starred))

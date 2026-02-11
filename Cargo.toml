@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 aes-gcm = "0.10.3"
 anyhow = "1.0.100"
-axum = "0.8.8"
+axum = { version = "0.8.8", features = ["multipart"] }
 base64 = "0.22.1"
 chrono = "0.4.42"
 config = { version = "0.15.19", features = ["toml"] }

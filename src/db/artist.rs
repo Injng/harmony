@@ -1,3 +1,4 @@
+use base64::{Engine, engine::general_purpose};
 use sea_orm::entity::prelude::*;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
@@ -8,6 +9,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub name: String,
+    pub picture: Option<Vec<u8>>,
     #[sea_orm(has_many, via = "album_artists")]
     pub albums: HasMany<super::album::Entity>,
     #[sea_orm(has_many, via = "track_artists")]
@@ -26,6 +28,11 @@ impl Serialize for Model {
         let mut state = serializer.serialize_struct("Artist", 2)?;
         state.serialize_field("id", &self.id.to_string())?;
         state.serialize_field("name", &self.name)?;
+        if let Some(p) = &self.picture {
+            state.serialize_field("picture", &Some(general_purpose::STANDARD.encode(p)))?;
+        } else {
+            state.serialize_field("picture", &None::<String>)?;
+        }
         state.end()
     }
 }
