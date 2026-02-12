@@ -157,6 +157,10 @@ impl TrackMetadata for FlacMetadata {
         }
     }
 
+    fn get_runtime(&self) -> u64 {
+        return self.stream_info.total_samples / self.stream_info.sample_rate as u64;
+    }
+
     fn get_album_artists(&self) -> Option<Vec<String>> {
         if let Some(v) = self.tags.get("ALBUMARTIST") {
             return Some(v.clone());

@@ -13,6 +13,7 @@ pub struct Model {
     pub picture: Option<Vec<u8>>,
     #[sea_orm(default_value = 0)]
     pub plays: u32,
+    pub runtime: i64,
     pub last_played: Option<DateTime<Utc>>,
     pub album_id: Uuid,
     #[sea_orm(has_one)]
@@ -58,9 +59,10 @@ impl Serialize for Model {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Track", 5)?;
+        let mut state = serializer.serialize_struct("Track", 6)?;
         state.serialize_field("id", &self.id.to_string())?;
         state.serialize_field("title", &self.title)?;
+        state.serialize_field("runtime", &self.runtime)?;
         state.serialize_field("plays", &self.plays)?;
         state.serialize_field("lastPlayed", &self.last_played)?;
         state.serialize_field("albumId", &self.album_id.to_string())?;
@@ -73,9 +75,10 @@ impl Serialize for ModelEx {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Track", 6)?;
+        let mut state = serializer.serialize_struct("Track", 7)?;
         state.serialize_field("id", &self.id.to_string())?;
         state.serialize_field("title", &self.title)?;
+        state.serialize_field("runtime", &self.runtime)?;
         state.serialize_field("plays", &self.plays)?;
         state.serialize_field("lastPlayed", &self.last_played)?;
         state.serialize_field("albumId", &self.album_id.to_string())?;

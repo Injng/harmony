@@ -110,6 +110,7 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
     let album_name: String = metadata.get_album_name()?;
     let track_name: String = metadata.get_track_name()?;
     let artists: Vec<String> = metadata.get_artists()?;
+    let runtime: i64 = metadata.get_runtime() as i64;
     let album_artists: Option<Vec<String>> = metadata.get_album_artists();
     let musicbrainz_album_id: Option<String> = metadata.get_musicbrainz_album_id();
     let picture: Option<Vec<u8>> = metadata.get_picture_data(FlacPictureType::FrontCover);
@@ -157,6 +158,7 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
             .set_id(track_id)
             .set_title(track_name.trim())
             .set_picture(picture)
+            .set_runtime(runtime)
             .set_album_id(album_id);
         for artist in artist_models {
             track = track.add_artist(artist);
@@ -170,6 +172,7 @@ async fn scan_flac(path: &Path, db: &DatabaseConnection) -> Result<()> {
             .set_id(track_id)
             .set_title(track_name.trim())
             .set_picture(picture)
+            .set_runtime(runtime)
             .set_album_id(album_id);
         for artist in artist_models {
             track = track.add_artist(artist);
