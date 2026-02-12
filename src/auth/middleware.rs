@@ -6,7 +6,7 @@ use axum::{
 };
 use serde::Deserialize;
 
-use crate::AppState;
+use crate::{ADMIN_PATHS, AppState};
 
 use super::auth::auth_check_and_decode_hex;
 use super::users::auth_check_user;
@@ -51,6 +51,16 @@ pub async fn auth_middleware(
         }
     }
 
+    // get request path to see if it requires admin privileges
+    let path: &str = request.uri().path();
+    let mut is_admin = false;
+    for p in ADMIN_PATHS {
+        if path == p {
+            is_admin = true;
+            break;
+        }
+    }
+
     // check that the user has the correct credentials
     if let Err(e) = auth_check_user(
         &params.u,
@@ -58,6 +68,7 @@ pub async fn auth_middleware(
         &salt_str,
         &state.settings.key,
         &state.db,
+        is_admin,
     )
     .await
     {

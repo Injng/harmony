@@ -37,6 +37,8 @@ struct AppState {
     db: Arc<DatabaseConnection>,
 }
 
+const ADMIN_PATHS: [&str; 1] = ["/rest/uploadArtistPicture"];
+
 #[tokio::main]
 async fn main() {
     // load server configuration and connect to database

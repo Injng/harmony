@@ -15,6 +15,7 @@ pub async fn auth_check_user(
     salt: &str,
     key: &str,
     db: &DatabaseConnection,
+    is_admin: bool,
 ) -> Result<()> {
     // check if user with username exists
     let user: Option<user::Model> = User::find()
@@ -25,6 +26,10 @@ pub async fn auth_check_user(
     // attempt to verify the password
     if let Some(u) = user {
         if auth_verify(&u.password, token, salt, key, &u.nonce) {
+            // if required, check for admin privileges
+            if is_admin && !u.is_admin {
+                return Err(anyhow!("[ERROR] User is not an admin"));
+            }
             return Ok(());
         } else {
             return Err(anyhow!("[ERROR] Incorrect password for user"));
